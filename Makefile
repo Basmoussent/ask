@@ -2,7 +2,7 @@ IMAGE_NAME=ask
 CONTAINER_NAME=ask-container
 
 all:
-	python3 main.py
+	python3 main.py & python3 api.py
 
 build:
 	docker build -t $(IMAGE_NAME) .
