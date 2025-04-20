@@ -22,8 +22,7 @@ class RequestWorkspace(QWidget):
 	def init_ui(self):
 		"""Initialise l'interface utilisateur"""
 		self.setWindowTitle("ASK")
-		self.setGeometry(100, 100, 1000, 700)
-
+		self.setGeometry(100, 100, 1920, 1080)
 		self.main_layout = QVBoxLayout()
 		self.main_layout.setSpacing(10)
 		self.main_layout.setContentsMargins(15, 15, 15, 15)

@@ -35,6 +35,7 @@ class DarkPurpleStyle:
         palette.setColor(QPalette.Highlight, QColor(DarkPurpleStyle.PURPLE_ACCENT))
         palette.setColor(QPalette.HighlightedText, QColor(DarkPurpleStyle.TEXT_COLOR))
         
+        
         app.setPalette(palette)
         
         # Style des widgets

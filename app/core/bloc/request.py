@@ -26,7 +26,6 @@ class RequestBlock(BaseBloc):
         
     def init_ui(self):
         super().init_ui()
-        
         # URL et méthode
         self.url_layout = QHBoxLayout()
         
@@ -35,7 +34,7 @@ class RequestBlock(BaseBloc):
         self.method_combo.setFixedWidth(100)
 
         self.url_input = QLineEdit()
-        self.url_input.setText("https://google.com")
+        self.url_input.setText("http://127.0.0.1:5000")
 
         
         method_label = QLabel("Méthode:")
@@ -133,8 +132,12 @@ class RequestBlock(BaseBloc):
         self.post_data_type_layout = QHBoxLayout()
         self.post_data_type_label = QLabel("Type de données:")
         self.post_data_type_combo = QComboBox()
-        self.post_data_type_combo.addItems(["form-data", "x-www-form-urlencoded", "raw", "binary"])
+        self.post_data_type_combo.addItems(["x-www-form-urlencoded"])
+        # self.post_data_type_combo.addItems(["form-data", "x-www-form-urlencoded"])
+        self.post_data_type_combo.activated.connect(self.update_post_data_ui)
         self.post_data_type_combo.currentIndexChanged.connect(self.update_post_data_ui)
+        
+
         
         self.post_data_type_layout.addWidget(self.post_data_type_label)
         self.post_data_type_layout.addWidget(self.post_data_type_combo)
@@ -177,7 +180,9 @@ class RequestBlock(BaseBloc):
         self.raw_data_format_layout = QHBoxLayout()
         self.raw_data_format_label = QLabel("Format:")
         self.raw_data_format_combo = QComboBox()
-        self.raw_data_format_combo.addItems(["JSON", "XML", "HTML", "Text"])
+        self.raw_data_format_combo.addItems(["Raw"])
+        self.raw_data_format_combo.activated.connect(self.update_raw_format)
+        self.raw_data_format_combo.currentIndexChanged.connect(self.update_raw_format)
         
         self.raw_data_format_layout.addWidget(self.raw_data_format_label)
         self.raw_data_format_layout.addWidget(self.raw_data_format_combo)
@@ -192,6 +197,19 @@ class RequestBlock(BaseBloc):
         
         self.raw_data_layout.addWidget(self.raw_data_editor)
         
+        # Content-Tyoe
+        self.content_type_layout = QHBoxLayout()
+        self.content_type_label = QLabel("Content-Type:")
+        self.content_type_combo = QLineEdit()
+        self.content_type_combo.setText("application/x-www-form-urlencoded")
+
+        self.content_type_layout.addWidget(self.content_type_label)
+        self.content_type_layout.addWidget(self.content_type_combo)
+        self.content_type_layout.addStretch()
+        
+        self.raw_data_layout.addLayout(self.content_type_layout)
+
+
         # Binary data
         self.binary_data_widget = QWidget()
         self.binary_data_layout = QVBoxLayout(self.binary_data_widget)
@@ -211,8 +229,6 @@ class RequestBlock(BaseBloc):
         self.binary_data_layout.addStretch()
         
         # Ajouter les widgets au stack
-        self.post_data_stack.addWidget(self.form_data_widget)
-        self.post_data_stack.addWidget(self.form_data_widget)  # x-www-form-urlencoded (même UI que form-data)
         self.post_data_stack.addWidget(self.raw_data_widget)
         self.post_data_stack.addWidget(self.binary_data_widget)
         
@@ -241,7 +257,8 @@ class RequestBlock(BaseBloc):
         self.content_layout.addLayout(self.url_layout)
         self.content_layout.addWidget(self.tabs)
         self.content_layout.addLayout(self.status_layout)
-        
+    
+
     def add_parameter_row(self):
         current_rows = self.param_table.rowCount()
         self.param_table.setRowCount(current_rows + 1)
@@ -258,8 +275,11 @@ class RequestBlock(BaseBloc):
         current_rows = self.form_data_table.rowCount()
         self.form_data_table.setRowCount(current_rows + 1)
         
-    def update_post_data_ui(self, index):
+    def update_post_data_ui(self, index=None):
         self.post_data_stack.setCurrentIndex(index)
+        
+    def update_raw_format(self, index=None):
+        self.raw_data_format_combo.hidePopup()
         
     def select_binary_file(self):
         from PySide6.QtWidgets import QFileDialog
@@ -275,7 +295,6 @@ class RequestBlock(BaseBloc):
             value_item = table.item(row, 1)
             if key_item and key_item.text() and value_item:
                 params[key_item.text()] = value_item.text()
-        print(params)
         return params
         
     def get_headers(self):
@@ -286,7 +305,9 @@ class RequestBlock(BaseBloc):
         
     def get_post_data(self):
         index = self.post_data_type_combo.currentIndex()
-        if index == 0 or index == 1:  # form-data ou x-www-form-urlencoded
+        if index == 0 or index == 1:
+            if self.raw_data_format_combo.currentText() == "Raw":
+                return self.raw_data_editor.toPlainText()
             return self.get_params_from_table(self.form_data_table)
         elif index == 2:  # raw
             return self.raw_data_editor.toPlainText()
@@ -307,7 +328,17 @@ class RequestBlock(BaseBloc):
         self.request.set_params(self.get_params_from_table(self.param_table))
         self.request.set_headers(self.get_params_from_table(self.header_table))
         self.request.set_cookies(self.get_params_from_table(self.cookie_table))
-        
+        if self.method_combo.currentText() in ["POST", "PUT", "PATCH"]:
+            post_data = self.get_post_data()
+            if self.raw_data_format_combo.currentText() == "Raw":  # Pour form-data et x-www-form-urlencoded
+                self.request.set_data(post_data)
+            elif isinstance(post_data, str):  # Pour raw data
+                if self.raw_data_format_combo.currentText().lower() == "json":
+                    self.request.headers["Content-Type"] = "application/json"
+                elif self.raw_data_format_combo.currentText().lower() == "xml":
+                    self.request.headers["Content-Type"] = "application/xml"
+                self.request.set_data(post_data)
+            
         try:
             self.request.send()
             self.status_label.setText(f"Statut: {self.request.status_code}")

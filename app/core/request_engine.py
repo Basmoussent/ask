@@ -8,6 +8,7 @@ class Request:
         self.params = {}
         self.headers = {}
         self.cookies = {}
+        self.data = None
         self.last_response = None
         self.content_type = None
         self.status_code = None
@@ -26,6 +27,9 @@ class Request:
 
     def set_cookies(self, cookies):
         self.cookies = cookies 
+    
+    def set_data(self, data):
+        self.data = data
         
     def send(self):
         """Envoie la requête HTTP et retourne la réponse"""
@@ -38,7 +42,7 @@ class Request:
             if self.method == "GET":
                 r = requests.get(self.url, params=self.params, headers=headers, cookies=cookies, timeout=10)
             elif self.method == "POST":
-                r = requests.post(self.url, data=self.params, headers=headers, cookies=cookies, timeout=10)
+                r = requests.post(self.url, params=self.params, data=self.data, headers=headers, cookies=cookies, timeout=10)
             elif self.method == "PUT":
                 r = requests.put(self.url, data=self.params, headers=headers, cookies=cookies, timeout=10)
             elif self.method == "DELETE":
