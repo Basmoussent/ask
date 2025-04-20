@@ -275,6 +275,7 @@ class RequestBlock(BaseBloc):
             value_item = table.item(row, 1)
             if key_item and key_item.text() and value_item:
                 params[key_item.text()] = value_item.text()
+        print(params)
         return params
         
     def get_headers(self):
@@ -304,26 +305,20 @@ class RequestBlock(BaseBloc):
         self.request.set_url(self.url_input.text())
         self.request.set_method(self.method_combo.currentText())
         self.request.set_params(self.get_params_from_table(self.param_table))
-        
-        # Il faudrait ajouter les méthodes pour gérer les headers, cookies et post data
-        # dans la classe Request avant de les utiliser ici
+        self.request.set_headers(self.get_params_from_table(self.header_table))
+        self.request.set_cookies(self.get_params_from_table(self.cookie_table))
         
         try:
-            # Envoyer la requête
             self.request.send()
-            
-            # Formatage et affichage du code de statut
             self.status_label.setText(f"Statut: {self.request.status_code}")
-            
-            # Couleur du statut selon le code
             if 200 <= self.request.status_code < 300:
-                self.status_label.setStyleSheet("color: #4CAF50;")  # Vert pour succès
+                self.status_label.setStyleSheet("color: #4CAF50;")
             elif 300 <= self.request.status_code < 400:
-                self.status_label.setStyleSheet("color: #2196F3;")  # Bleu pour redirection
+                self.status_label.setStyleSheet("color: #2196F3;")
             elif 400 <= self.request.status_code < 500:
-                self.status_label.setStyleSheet("color: #FF9800;")  # Orange pour erreur client
+                self.status_label.setStyleSheet("color: #FF9800;")
             else:
-                self.status_label.setStyleSheet("color: #F44336;")  # Rouge pour erreur serveur
+                self.status_label.setStyleSheet("color: #F44336;")
                 
         except Exception as e:
             self.status_label.setText(f"Erreur: {str(e)}")
